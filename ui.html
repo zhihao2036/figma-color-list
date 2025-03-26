@@ -1,0 +1,188 @@
+<style>
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      sans-serif;
+    margin: 0;
+    padding: 16px;
+    color: #333;
+    background-color: #f0f0f0;
+  }
+
+  h3 {
+    font-size: 16px;
+    margin: 0 0 16px 0;
+    color: #333;
+    font-weight: 600;
+  }
+
+  #no-selection {
+    border-radius: 8px;
+  }
+
+  #color-info {
+    border-radius: 8px;
+  }
+
+  .color-item {
+    display: flex;
+    margin-bottom: 16px;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  .color-preview {
+    width: 36px;
+    height: 36px;
+    border-radius: 4px;
+    margin-right: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .color-text {
+    flex: 1;
+  }
+
+  .color-value {
+    font-size: 14px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+  }
+
+  .color-value:last-child {
+    margin-bottom: 0;
+  }
+
+  .color-label {
+    width: 80px;
+    color: #666;
+    font-weight: 500;
+  }
+
+  button {
+    background-color: #18a0fb;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  button:hover {
+    background-color: #0d8ee9;
+  }
+
+  button#cancel {
+    background-color: transparent;
+    color: #333;
+    margin-right: 8px;
+  }
+
+  button#cancel:hover {
+    background-color: #f0f0f0;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+</style>
+
+<div id="no-selection">
+  <h3>Color list</h3>
+</div>
+<div id="color-info" style="display: none">
+  <h3>Color list</h3>
+  <div id="color-list"></div>
+</div>
+
+<script>
+  // 接收来自插件的消息
+  window.onmessage = (event) => {
+    const message = event.data.pluginMessage;
+    console.log("收到消息:", message);
+
+    if (message.type === "selection-colors") {
+      const colorList = document.getElementById("color-list");
+      const noSelection = document.getElementById("no-selection");
+      const colorInfo = document.getElementById("color-info");
+
+      // 清空之前的色值列表
+      colorList.innerHTML = "";
+
+      if (message.colors && message.colors.length > 0) {
+        // 显示色值信息
+        noSelection.style.display = "none";
+        colorInfo.style.display = "block";
+
+        // 为每个色值创建显示元素
+        message.colors.forEach((colorData, index) => {
+          const colorItem = document.createElement("div");
+          colorItem.className = "color-item";
+
+          // 创建色块预览
+          const colorPreview = document.createElement("div");
+          colorPreview.className = "color-preview";
+          colorPreview.style.backgroundColor = colorData.hex;
+
+          // 创建色值文本
+          const colorText = document.createElement("div");
+          colorText.className = "color-text";
+          colorText.innerHTML = `
+          <div class="row">
+            <div class="col color-label">HEX:</div>
+            <div class="col color-value">${colorData.hex}</div>
+          </div>
+          <div class="row">
+            <div class="col color-label">HEX+A:</div>
+            <div class="col color-value">${colorData.hex}${Math.round(
+            colorData.alpha * 255
+          )
+            .toString(16)
+            .padStart(2, "0")}</div>
+          </div>
+          <div class="row">
+            <div class="col color-label">RGB:</div>
+            <div class="col color-value">${colorData.rgb}</div>
+          </div>
+          <div class="row">
+            <div class="col color-label">RGBA:</div>
+            <div class="col color-value">${colorData.rgba}</div>
+          </div>
+          <div class="row">
+            <div class="col color-label">OPACITY:</div>
+            <div class="col color-value">${Math.round(
+              colorData.alpha * 100
+            )}%</div>
+          </div>
+        `;
+
+          colorItem.appendChild(colorPreview);
+          colorItem.appendChild(colorText);
+          colorList.appendChild(colorItem);
+        });
+      } else {
+        // 没有找到色值
+        noSelection.style.display = "block";
+        colorInfo.style.display = "none";
+      }
+    }
+  };
+
+  document.getElementById("create").onclick = () => {
+    const textbox = document.getElementById("count");
+    const count = parseInt(textbox.value, 10);
+    parent.postMessage(
+      { pluginMessage: { type: "create-shapes", count } },
+      "*"
+    );
+  };
+
+  document.getElementById("cancel").onclick = () => {
+    parent.postMessage({ pluginMessage: { type: "cancel" } }, "*");
+  };
+</script>
